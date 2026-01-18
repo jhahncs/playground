@@ -1,0 +1,6 @@
+,종속변수,독립변수
+0,노화최종판정,"['Cutibacterium acnes', 'Staphylococcus hominis', 'Staphylococcus saccharolyticus', 'Corynebacterium jeikeium', 'Staphylococcus aureus', 'Staphylococcus capitis', 'Streptococcus chenjunshii', 'Staphylococcus massiliensis']"
+1,건조최종판정,"['Streptococcus didelphis', 'Cutibacterium acnes', 'Streptococcus caviae', 'Staphylococcus hominis', 'Streptococcus iniae', 'Staphylococcus aureus']"
+2,색소최종판정,"['Cutibacterium acnes', 'Corynebacterium tuberculostearicum', 'Staphylococcus muscae', 'Staphylococcus epidermidis', 'Staphylococcus rostri', 'Staphylococcus aureus', 'Streptococcus oralis', 'Staphylococcus haemolyticus']"
+3,유분최종판정,"['Staphylococcus aureus', 'Cutibacterium acnes', 'Streptococcus zalophi', 'Staphylococcus pasteuri']"
+4,민감최종판정,"['Actinomyces viscosus', 'Cutibacterium acnes', 'Corynebacterium matruchotii', 'Streptococcus thermophilus', 'Corynebacterium ureicelerivorans', 'Staphylococcus aureus', 'Actinomyces oris', 'Streptococcus mutans']"

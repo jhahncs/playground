@@ -1,0 +1,6 @@
+,dep,training(80%),test(20%)
+0,노화최종판정,Tight = 167 / Aging = 35,Tight = 39 / Aging = 12
+1,건조최종판정,Moist = 152 / Dry = 50,Moist = 43 / Dry = 8
+2,색소최종판정,Fair = 144 / Pigment = 58,Fair = 36 / Pigment = 15
+3,유분최종판정,Neutral = 163 / Oily = 39,Neutral = 45 / Oily = 6
+4,민감최종판정,Resistant = 163 / Sensitive = 39,Resistant = 45 / Sensitive = 6
