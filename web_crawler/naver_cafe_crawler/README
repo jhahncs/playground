@@ -1,0 +1,7 @@
+source /data/jhahn/playground_env/bin/activate
+cd /home/jhahn/playground/web_crawler/naver_cafe_crawler
+python main.py
+
+
+nohup python main.py > run.log 2>&1 &
+tail -f run.log  # 로그 실시간 확인
