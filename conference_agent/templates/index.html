@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Conference Agent Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+
+        h1 {
+            color: #667eea;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            color: #666;
+            font-size: 1.1em;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 2.5em;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .stat-label {
+            color: #666;
+            margin-top: 10px;
+        }
+
+        .controls {
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+
+        .controls h2 {
+            margin-bottom: 20px;
+            color: #667eea;
+        }
+
+        .filter-group {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        input, select, button {
+            padding: 12px 20px;
+            border: 2px solid #e0e0e0;
+            border-radius: 5px;
+            font-size: 1em;
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        button {
+            background: #667eea;
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background 0.3s;
+        }
+
+        button:hover {
+            background: #5568d3;
+        }
+
+        .conferences-container {
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .conferences-container h2 {
+            margin-bottom: 20px;
+            color: #667eea;
+        }
+
+        .conference-card {
+            background: #f8f9fa;
+            border-left: 4px solid #667eea;
+            padding: 20px;
+            margin-bottom: 15px;
+            border-radius: 5px;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .conference-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+
+        .conference-title {
+            font-size: 1.3em;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .conference-info {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .info-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .info-label {
+            font-weight: bold;
+            color: #666;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: bold;
+        }
+
+        .badge-urgent {
+            background: #ff4757;
+            color: white;
+        }
+
+        .badge-soon {
+            background: #ffa502;
+            color: white;
+        }
+
+        .badge-normal {
+            background: #2ed573;
+            color: white;
+        }
+
+        .quality-bar {
+            width: 100%;
+            height: 8px;
+            background: #e0e0e0;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 10px;
+        }
+
+        .quality-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #ffa502, #2ed573);
+            transition: width 0.3s;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 50px;
+            color: #667eea;
+            font-size: 1.2em;
+        }
+
+        .error {
+            background: #ff4757;
+            color: white;
+            padding: 20px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+
+        .export-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .link {
+            color: #667eea;
+            text-decoration: none;
+        }
+
+        .link:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🎓 Conference Agent Dashboard</h1>
+            <p class="subtitle">Academic Conference Information Hub</p>
+        </header>
+
+        <div class="stats-grid" id="stats">
+            <div class="stat-card">
+                <div class="stat-number" id="total-conferences">-</div>
+                <div class="stat-label">Total Conferences</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="upcoming-7days">-</div>
+                <div class="stat-label">Deadlines in 7 Days</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="upcoming-30days">-</div>
+                <div class="stat-label">Deadlines in 30 Days</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="avg-quality">-</div>
+                <div class="stat-label">Avg Quality Score</div>
+            </div>
+        </div>
+
+        <div class="controls">
+            <h2>Filters & Search</h2>
+            <div class="filter-group">
+                <input type="text" id="search-input" placeholder="Search conferences...">
+                <select id="source-filter">
+                    <option value="">All Sources</option>
+                    <option value="wikicfp">WikiCFP</option>
+                    <option value="ieee">IEEE</option>
+                    <option value="acm">ACM</option>
+                    <option value="springer">Springer</option>
+                </select>
+                <select id="year-filter">
+                    <option value="">All Years</option>
+                </select>
+                <input type="number" id="quality-filter" placeholder="Min Quality (0-1)" step="0.1" min="0" max="1">
+                <button onclick="applyFilters()">Apply Filters</button>
+                <button onclick="showUpcoming()">Upcoming Deadlines</button>
+            </div>
+            <div class="export-buttons">
+                <button onclick="exportCSV()">📥 Export CSV</button>
+                <button onclick="exportExcel()">📥 Export Excel</button>
+            </div>
+        </div>
+
+        <div class="conferences-container">
+            <h2>Conferences</h2>
+            <div id="conferences-list">
+                <div class="loading">Loading conferences...</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let allConferences = [];
+
+        // Load statistics
+        async function loadStats() {
+            try {
+                const response = await fetch('/api/stats');
+                const stats = await response.json();
+
+                document.getElementById('total-conferences').textContent = stats.total;
+                document.getElementById('upcoming-7days').textContent = stats.upcoming_deadlines.within_7_days;
+                document.getElementById('upcoming-30days').textContent = stats.upcoming_deadlines.within_30_days;
+                document.getElementById('avg-quality').textContent = stats.avg_quality.toFixed(2);
+
+                // Populate year filter
+                const yearFilter = document.getElementById('year-filter');
+                Object.keys(stats.by_year).sort().forEach(year => {
+                    const option = document.createElement('option');
+                    option.value = year;
+                    option.textContent = year;
+                    yearFilter.appendChild(option);
+                });
+            } catch (error) {
+                console.error('Error loading stats:', error);
+            }
+        }
+
+        // Load conferences
+        async function loadConferences(filters = {}) {
+            const list = document.getElementById('conferences-list');
+            list.innerHTML = '<div class="loading">Loading conferences...</div>';
+
+            try {
+                const params = new URLSearchParams(filters);
+                const response = await fetch(`/api/conferences?${params}`);
+                const conferences = await response.json();
+
+                if (conferences.error) {
+                    list.innerHTML = `<div class="error">${conferences.error}</div>`;
+                    return;
+                }
+
+                allConferences = conferences;
+                renderConferences(conferences);
+            } catch (error) {
+                list.innerHTML = `<div class="error">Error loading conferences: ${error.message}</div>`;
+            }
+        }
+
+        // Render conferences
+        function renderConferences(conferences) {
+            const list = document.getElementById('conferences-list');
+
+            if (conferences.length === 0) {
+                list.innerHTML = '<p>No conferences found.</p>';
+                return;
+            }
+
+            list.innerHTML = conferences.map(conf => {
+                const deadline = new Date(conf.submission_deadline);
+                const daysUntil = Math.ceil((deadline - new Date()) / (1000 * 60 * 60 * 24));
+
+                let deadlineBadge = '';
+                if (daysUntil >= 0 && daysUntil <= 7) {
+                    deadlineBadge = `<span class="badge badge-urgent">⚠️ ${daysUntil} days left</span>`;
+                } else if (daysUntil > 7 && daysUntil <= 30) {
+                    deadlineBadge = `<span class="badge badge-soon">⏰ ${daysUntil} days left</span>`;
+                } else if (daysUntil > 30) {
+                    deadlineBadge = `<span class="badge badge-normal">📅 ${daysUntil} days left</span>`;
+                }
+
+                return `
+                    <div class="conference-card">
+                        <div class="conference-title">
+                            ${conf.name}
+                            ${conf.acronym ? `(${conf.acronym})` : ''}
+                            ${deadlineBadge}
+                        </div>
+                        <div class="conference-info">
+                            <div class="info-item">
+                                <span class="info-label">📍 Location:</span>
+                                <span>${conf.location}</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">📅 Dates:</span>
+                                <span>${conf.conference_start || 'TBD'}</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">⏰ Deadline:</span>
+                                <span>${conf.submission_deadline || 'TBD'}</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">🌐 Source:</span>
+                                <span>${conf.source}</span>
+                            </div>
+                        </div>
+                        ${conf.website_url ? `<div style="margin-top: 10px;"><a href="${conf.website_url}" target="_blank" class="link">🔗 Official Website</a></div>` : ''}
+                        <div class="quality-bar">
+                            <div class="quality-fill" style="width: ${conf.data_quality_score * 100}%"></div>
+                        </div>
+                        <div style="font-size: 0.85em; color: #666; margin-top: 5px;">
+                            Quality Score: ${conf.data_quality_score.toFixed(2)}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Apply filters
+        function applyFilters() {
+            const filters = {};
+
+            const source = document.getElementById('source-filter').value;
+            if (source) filters.source = source;
+
+            const year = document.getElementById('year-filter').value;
+            if (year) filters.year = year;
+
+            const quality = document.getElementById('quality-filter').value;
+            if (quality) filters.min_quality = quality;
+
+            loadConferences(filters);
+        }
+
+        // Search
+        let searchTimeout;
+        document.getElementById('search-input').addEventListener('input', (e) => {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(async () => {
+                const query = e.target.value;
+                if (query.length < 2) {
+                    loadConferences();
+                    return;
+                }
+
+                try {
+                    const response = await fetch(`/api/conferences/search?q=${encodeURIComponent(query)}`);
+                    const results = await response.json();
+                    renderConferences(results);
+                } catch (error) {
+                    console.error('Search error:', error);
+                }
+            }, 300);
+        });
+
+        // Show upcoming deadlines
+        async function showUpcoming() {
+            try {
+                const response = await fetch('/api/conferences/upcoming?days=30');
+                const conferences = await response.json();
+                renderConferences(conferences);
+            } catch (error) {
+                console.error('Error loading upcoming:', error);
+            }
+        }
+
+        // Export functions
+        function exportCSV() {
+            window.location.href = '/api/export/csv';
+        }
+
+        function exportExcel() {
+            window.location.href = '/api/export/excel';
+        }
+
+        // Initialize
+        loadStats();
+        loadConferences();
+    </script>
+</body>
+</html>
