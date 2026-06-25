@@ -1,1 +1,6 @@
 source /data/jhahn/playground_env/bin/activate
+
+D:\workspace\.virtualenvs\playground_envs\Scripts\activate.bat
+
+
+python exam_collector.py "D:\gdrive\_2026.1\OOP\기말고사" --output "C:\Users\jhahn\OneDrive\Desktop" --questions 3
