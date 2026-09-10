@@ -22,16 +22,12 @@ CONTENT_LIMIT = 10000
 DELAY         = 1.0
 START_DATE    = "2025-01-01"
 END_DATE      = "2025-12-31"
-KEYWORDS      = ["PSAT", "피셋"]
+KEYWORDS      = ["PSAT"]
 
 OUTPUT_DIR    = Path("output")
 
 MENUS = [
-    "공드림 자유수다",
-    "국가직 9급 수다방",
-    "국가직 7급 수다방",
-    "지방직 9급 수다방",
-    "지방직 7급 수다방"
+    "ㅣ찐합격수기ㅣ"
 ]
 # ==========================================
 
@@ -42,13 +38,20 @@ def process_menu(crawler, analyzer, menu_id, menu_name):
     logging.info("===== 메뉴 시작: %s (id=%d) =====", menu_name, menu_id)
 
     # ── 게시글 목록 수집 ──
-    articles = crawler.get_articles(
-        menu_id=menu_id,
+    #articles = crawler.get_articles(
+    #    menu_id=menu_id,
+    #    max_pages=MAX_PAGES,
+    #    start_date=START_DATE,
+    #    end_date=END_DATE,
+    #    menu_name=menu_name,
+    #)
+    articles = crawler.search_articles(
+        keywords=["PSAT"],
         max_pages=MAX_PAGES,
-        start_date=START_DATE,
-        end_date=END_DATE,
-        menu_name=menu_name,
-    )
+        start_date='2025-01-01',
+        end_date='2025-12-31',
+        menu_id = menu_id
+    )   
     logging.info("게시글 목록 수집 완료: %d개", len(articles))
     if not articles:
         logging.info("게시글이 없어 건너뜁니다.")
@@ -68,15 +71,19 @@ def process_menu(crawler, analyzer, menu_id, menu_name):
 
     # ── 단어 빈도 분석 ──
     contents_df = pd.read_csv(contents_path)
-    article_freq = analyzer.analyze_articles(contents_df, keywords=KEYWORDS)
+    article_freq = analyzer.analyze_articles(contents_df)
     analyzer.plot_bar(
         article_freq, top_n=20,
         title=f"[{menu_name}] 게시글 단어 빈도",
         save_pdf=str(f"{prefix}_article_freq.pdf"),
     )
 
+    if not comments:
+        logging.info("댓글이 없어 댓글 분석을 건너뜁니다.")
+        return
+
     comments_df = pd.read_csv(comments_path)
-    comment_freq = analyzer.analyze_comments(comments_df, keywords=KEYWORDS)
+    comment_freq = analyzer.analyze_comments(comments_df)
     analyzer.plot_bar(
         comment_freq, top_n=20,
         title=f"[{menu_name}] 댓글 단어 빈도",

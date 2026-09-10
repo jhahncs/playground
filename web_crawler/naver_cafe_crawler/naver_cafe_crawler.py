@@ -280,6 +280,72 @@ class NaverCafeCrawler:
                 continue
         return articles
 
+    def get_articles_by_title(
+        self,
+        keywords: str | list[str],
+        menu_id: int = 0,
+        max_pages: int = 3,
+        start_date: str | None = None,
+        end_date: str | None = None,
+        menu_name: str = '',
+    ) -> list:
+        """게시판 글 목록을 페이지 단위로 순회하며 제목에 키워드가 포함된 게시글만 수집합니다.
+
+        Args:
+            keywords:   단일 문자열 또는 키워드 목록. 하나라도 제목에 포함되면 수집 (OR).
+            menu_id:    게시판 ID. 0이면 전체 게시판.
+            max_pages:  최대 탐색 페이지 수.
+            start_date: 수집 시작일 (포함). 형식: 'YYYY-MM-DD'
+            end_date:   수집 종료일 (포함). 형식: 'YYYY-MM-DD'
+            menu_name:  지정하면 각 게시글에 menu_name 열이 추가됩니다.
+        """
+        kw_list = [keywords] if isinstance(keywords, str) else keywords
+        kw_lower = [kw.lower() for kw in kw_list]
+
+        start_ts = int(datetime.strptime(start_date, '%Y-%m-%d').timestamp() * 1000) if start_date else None
+        end_ts   = int(datetime.strptime(end_date,   '%Y-%m-%d').timestamp() * 1000) + 86400_000 - 1 if end_date else None
+
+        all_articles = []
+        for page in range(1, max_pages + 1):
+            logger.info("페이지 %d/%d 수집 중...", page, max_pages)
+            articles, has_next = self._fetch_article_list_page(menu_id, page)
+            if not articles:
+                logger.info("더 이상 게시글이 없습니다.")
+                break
+
+            stop = False
+            for a in articles:
+                date_val = a.get('date', '')
+                try:
+                    ts = int(datetime.strptime(date_val, '%Y-%m-%d').timestamp() * 1000)
+                except (TypeError, ValueError):
+                    ts = None
+
+                if start_ts and ts is not None and ts < start_ts:
+                    stop = True
+                    break
+                if end_ts and ts is not None and ts > end_ts:
+                    continue
+
+                title = a.get('title', '').lower()
+                if not any(kw in title for kw in kw_lower):
+                    continue
+
+                if menu_name:
+                    a['menu_name'] = menu_name
+                all_articles.append(a)
+
+            logger.info("페이지 %d: %d개 처리 (누적: %d개)", page, len(articles), len(all_articles))
+
+            if stop:
+                logger.info("start_date 이전 게시글 도달, 수집 종료.")
+                break
+            if not has_next:
+                logger.info("마지막 페이지입니다.")
+                break
+            time.sleep(self.delay)
+        return all_articles
+
     def get_article_count(self, menu_id: int = 0) -> int:
         """게시판 전체 게시글 수를 반환합니다. (perPage=1 이진 탐색 — 마지막 페이지 번호 = 총 게시글 수)"""
         lo, hi = 1, 1
@@ -639,6 +705,7 @@ class NaverCafeCrawler:
         start_date: str | None = None,
         end_date: str | None = None,
         oldest_first: bool = False,
+        menu_id: int = 0,
     ) -> list:
         """카페 내 키워드 검색으로 게시글을 수집합니다. 여러 키워드는 각각 검색 후 합칩니다 (OR).
 
@@ -647,6 +714,7 @@ class NaverCafeCrawler:
             start_date:    수집 시작일 (포함). 형식: 'YYYY-MM-DD'
             end_date:      수집 종료일 (포함). 형식: 'YYYY-MM-DD'
             oldest_first:  True면 마지막 페이지부터 역순으로 탐색 (오래된 게시글 우선).
+            menu_id:       특정 게시판으로 검색 범위를 제한합니다. 0이면 전체 게시판.
         """
         start_ts = int(datetime.strptime(start_date, '%Y-%m-%d').timestamp() * 1000) if start_date else None
         end_ts   = int(datetime.strptime(end_date,   '%Y-%m-%d').timestamp() * 1000) + 86400_000 - 1 if end_date else None
@@ -657,7 +725,7 @@ class NaverCafeCrawler:
         def _fetch_page(keyword, page):
             res = self.session.get(
                 f'https://apis.naver.com/cafe-web/cafe-search-api/v1.0/cafes/{self.club_id}/search/articles',
-                params={'query': keyword, 'perPage': 15, 'page': page, 'menuId': 0},
+                params={'query': keyword, 'perPage': 15, 'page': page, 'menuId': menu_id},
                 headers={'Referer': f'https://cafe.naver.com/{self.cafe_slug}'},
             )
             try:

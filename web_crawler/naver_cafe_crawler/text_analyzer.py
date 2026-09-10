@@ -62,8 +62,25 @@ class TextAnalyzer:
     # 내부 공통 분석
     # ──────────────────────────────────────────
 
-    def _count_words(self, texts: list[str], keywords: list[str] | None = None) -> Counter:
-        """keywords가 주어지면 그 중 하나라도 포함된 문장만 분석합니다."""
+    def _load_stopwords_file(self, path: str) -> set:
+        """텍스트 파일에서 불용어를 읽어 집합으로 반환합니다. (한 줄에 한 단어)"""
+        try:
+            with open(path, encoding='utf-8') as f:
+                words = {line.strip() for line in f if line.strip()}
+            logger.info("불용어 파일 로드: %s (%d개)", path, len(words))
+            return words
+        except FileNotFoundError:
+            logger.warning("불용어 파일을 찾을 수 없습니다: %s", path)
+            return set()
+
+    def _count_words(
+        self,
+        texts: list[str],
+        keywords: list[str] | None = None,
+        extra_stopwords: set | None = None,
+    ) -> Counter:
+        """keywords가 주어지면 그 중 하나라도 포함된 텍스트만 분석합니다."""
+        stopwords = self.stopwords | (extra_stopwords or set())
         counter: Counter = Counter()
         for text in texts:
             if not isinstance(text, str) or not text.strip():
@@ -74,7 +91,7 @@ class TextAnalyzer:
                 if not sentences:
                     continue
                 text = ' '.join(sentences)
-            tokens = self._tokenize(text)
+            tokens = [t for t in self._tokenize(text) if t not in stopwords]
             bigrams = [f"{tokens[i]} {tokens[i+1]}" for i in range(len(tokens) - 1)]
             counter.update(bigrams)
         return counter
@@ -93,13 +110,17 @@ class TextAnalyzer:
         df: pd.DataFrame,
         columns: list[str] | None = None,
         keywords: str | list[str] | None = None,
+        stopwords_file: str | None = None,
     ) -> pd.DataFrame:
         """게시글 DataFrame의 바이그램 빈도를 분석합니다.
 
         Args:
-            df:       get_article_contents() 결과 DataFrame.
-            columns:  분석할 열 이름 목록. 기본값은 ['title', 'content'].
-            keywords: 문자열 또는 목록. 지정하면 키워드 중 하나라도 포함된 문장만 분석합니다.
+            df:             get_article_contents() 결과 DataFrame.
+            columns:        분석할 열 이름 목록. 기본값은 ['title', 'content'].
+            keywords:       문자열 또는 목록. 지정하면 키워드 중 하나라도 포함된 텍스트만 분석합니다.
+                            None(기본값)이면 전체 텍스트를 분석합니다.
+            stopwords_file: 무시할 단어 목록이 담긴 텍스트 파일 경로 (한 줄에 한 단어).
+                            None이면 기본 불용어만 사용합니다.
 
         Returns:
             rank, word, count 열을 가진 DataFrame.
@@ -115,8 +136,9 @@ class TextAnalyzer:
                 texts.append(t[:t.index('🏆')] if '🏆' in t else t)
 
         kw_list = [keywords] if isinstance(keywords, str) else keywords
+        extra_sw = self._load_stopwords_file(stopwords_file) if stopwords_file else None
         logger.info("게시글 분석 — 열: %s, 텍스트 수: %d, 키워드 필터: %s", available, len(texts), kw_list or '없음')
-        counter = self._count_words(texts, keywords=kw_list)
+        counter = self._count_words(texts, keywords=kw_list, extra_stopwords=extra_sw)
         return self._to_df(counter)
 
     # ──────────────────────────────────────────
@@ -128,13 +150,17 @@ class TextAnalyzer:
         df: pd.DataFrame,
         column: str = 'content',
         keywords: str | list[str] | None = None,
+        stopwords_file: str | None = None,
     ) -> pd.DataFrame:
         """댓글 DataFrame의 바이그램 빈도를 분석합니다.
 
         Args:
-            df:       get_all_comments() 결과 DataFrame.
-            column:   분석할 열 이름. 기본값은 'content'.
-            keywords: 문자열 또는 목록. 지정하면 키워드 중 하나라도 포함된 문장만 분석합니다.
+            df:             get_all_comments() 결과 DataFrame.
+            column:         분석할 열 이름. 기본값은 'content'.
+            keywords:       문자열 또는 목록. 지정하면 키워드 중 하나라도 포함된 텍스트만 분석합니다.
+                            None(기본값)이면 전체 텍스트를 분석합니다.
+            stopwords_file: 무시할 단어 목록이 담긴 텍스트 파일 경로 (한 줄에 한 단어).
+                            None이면 기본 불용어만 사용합니다.
 
         Returns:
             rank, word, count 열을 가진 DataFrame.
@@ -144,8 +170,9 @@ class TextAnalyzer:
 
         texts = df[column].dropna().tolist()
         kw_list = [keywords] if isinstance(keywords, str) else keywords
+        extra_sw = self._load_stopwords_file(stopwords_file) if stopwords_file else None
         logger.info("댓글 분석 — 텍스트 수: %d, 키워드 필터: %s", len(texts), kw_list or '없음')
-        counter = self._count_words(texts, keywords=kw_list)
+        counter = self._count_words(texts, keywords=kw_list, extra_stopwords=extra_sw)
         return self._to_df(counter)
 
     # ──────────────────────────────────────────
